@@ -54,6 +54,13 @@ namespace DBService.DB
             db.Close();
             return dbresult.ToList();
         }
+        protected List<T> ConectSQL(string SQLstr, DynamicParameters Dp)
+        {
+            if (db.State == ConnectionState.Closed) db.Open();
+            var dbresult = db.Query<T>(SQLstr, Dp, commandType: CommandType.Text);
+            db.Close();
+            return dbresult.ToList();
+        }
         protected List<T> ConectSQL(string SQLstr, List<T> entity)
         {
             if (db.State == ConnectionState.Closed) db.Open();
