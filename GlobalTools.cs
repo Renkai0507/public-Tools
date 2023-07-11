@@ -8,6 +8,10 @@ namespace Tools
 {
     public static class GlobalTools
     {
+    /// <summary>
+    /// 限制TextBox只能輸入數字
+    /// </summary>
+    /// <param name="txt"></param>
         public static void Numberonly(TextBox txt)
         {
             var reg = new Regex("^[0-9]*$");
@@ -27,6 +31,11 @@ namespace Tools
                 txt.SelectionStart = txt.Text.Length;
             }
         }
+         /// <summary>
+        /// 用KeyPress觸發限制TextBox輸入含小數點的數字
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         public static void NumberPointonly(TextBox sender, KeyPressEventArgs e)
         {
             // 允許輸入數字、小數點、退格和刪除鍵
@@ -70,6 +79,87 @@ namespace Tools
                 }
             }
             
+        }
+
+        public static DataTable LoadCsvFile()
+        {
+            DataTable dt = new DataTable();
+            OpenFileDialog dialog = new OpenFileDialog();
+            dialog.Title = "請選擇匯入檔案";
+            dialog.InitialDirectory = ".\\";
+            dialog.Filter = "files (*.CSV)|";
+            if (dialog.ShowDialog() == DialogResult.OK)
+            {
+                if (!IsFileInUse(dialog.FileName))
+                {
+                    CsvReader cr = new CsvReader(dialog.FileName);
+                    dt = cr.csv2dt(dialog.FileName, 0);
+                    return dt;
+                }
+                else
+                    MessageBox.Show("檔案已開啟占用中,請關閉該檔案", "檔案占用中",
+                MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+            return null;
+        }
+
+
+        private void btnCsvOut(DataGridView dgvExcel)
+        {
+            SaveFileDialog savefile = new SaveFileDialog();
+            savefile.Filter = "CSV File(*.csv) | *.csv";
+            savefile.FileName = DateTime.Now.Year - 1911 + DateTime.Now.ToString("MMdd");
+            if (dgvExcel.RowCount < 1)
+            {
+                MessageBox.Show("資料列表尚無資料，請先確認檔案");
+                return;
+            }
+            if (savefile.ShowDialog() == DialogResult.OK)
+            {
+                StreamWriter writer = new StreamWriter(savefile.FileName, false, System.Text.Encoding.GetEncoding("big5"));
+                string header = string.Empty;
+                foreach (DataGridViewTextBoxColumn item in dgvExcel.Columns)
+                {
+                    //header = item.ToString();
+                    header += item.HeaderText + ",";
+                }
+                writer.WriteLine(header);
+                foreach (DataGridViewRow item in dgvExcel.Rows)
+                {
+                    string strRow = string.Empty;
+                    foreach (DataGridViewCell cell in item.Cells)
+                    {
+                        if (cell.Value != null)
+                        {
+                            strRow += "\"" + cell.Value.ToString() + "\",";
+                        }
+
+                    }
+                    writer.WriteLine(strRow);
+                }
+                writer.Close();
+            }
+        }
+        static bool IsFileInUse(string FileName)
+        {
+            bool isuse = true;
+            FileStream fs = null;
+            try
+            {
+                fs = new FileStream(FileName, FileMode.Open, FileAccess.ReadWrite, FileShare.None);
+                isuse = false;
+            }
+            catch
+            {
+            }
+            finally
+            {
+                if (fs != null)
+                {
+                    fs.Close();
+                }
+            }
+            return isuse;
         }
         
     }
