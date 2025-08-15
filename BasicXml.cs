@@ -13,6 +13,7 @@ namespace Tools
     {
          XDocument document;
         string XmlPath = System.Environment.CurrentDirectory + $@"\Xmls\{typeof(T).Name}.xml";
+        //string rootPath=$@"\\192.9.10.6\ym_exe\PeopleCntRpt\Xmls\{typeof(T).Name}.xml";
         string rootstr;
         IEnumerable<XElement> root;        
         public string ErrorMsg { get; private set; }
@@ -26,15 +27,23 @@ namespace Tools
             }
             if (!IOhelper.FileExists(XmlPath))
             {
-                document.Declaration = new XDeclaration("1.0", "UTF-8", "");
-                //頂層root
-                XElement root = new XElement(rootstr + "s", "");
-                //計數自動儲存用
-                document.Add(root);
-                document.Save(XmlPath);
+                // 主機路徑複製到電腦裡
+                if (IOhelper.FileExists(rootPath))
+                {
+                    File.Copy(rootPath, XmlPath);
+                }
+                else
+                {
+                    document.Declaration = new XDeclaration("1.0", "UTF-8", "");
+                    //頂層root
+                    XElement root = new XElement(rootstr + "s", "");
+                    //計數自動儲存用
+                    document.Add(root);
+                    document.Save(XmlPath);
+                }                
             }
-            else 
-            {
+            //else 
+            //{
                 try
                 {
                     document = XDocument.Load(XmlPath);
@@ -43,7 +52,7 @@ namespace Tools
                 {
                     MessageBox.Show(ex.Message);
                 }
-            }
+            //}
             root = from c in document.Elements()
                    select c;
             
@@ -84,7 +93,18 @@ namespace Tools
                     var abc= Element.Nodes().ToList();
                     if (Element.Descendants(propertys[j]).Count() == 0)
                     {
-                        Element.Add(new XElement(propertys[j], ""));
+                        var test = entity.GetType().GetProperties()[j].PropertyType;
+                        if (entity.GetType().GetProperties()[j] == typeof(Boolean))
+                        {
+                            Element.Add(new XElement(propertys[j], "false"));
+                        } else if (entity.GetType().GetProperties()[j].PropertyType == typeof(int))
+                        {
+                            Element.Add(new XElement(propertys[j], "0"));
+                        } else
+                        {
+                            Element.Add(new XElement(propertys[j], ""));
+                        }
+                        
 
                         document.Save(XmlPath);
                     }
@@ -112,7 +132,8 @@ namespace Tools
                 ErrorMsg = "找不到資料";
                 return false;
             }                
-            entityXml.Remove();            
+            entityXml.Remove();    
+            document.Save(XmlPath);        
             ErrorMsg = "";
             return true;
         }
@@ -129,6 +150,7 @@ namespace Tools
             {
                     entityXml.SetElementValue(property.Name, property.GetValue(entity).ToString());
             }
+            document.Save(XmlPath);
             ErrorMsg = "";
             return true;
         }
@@ -158,6 +180,7 @@ namespace Tools
                 if (!IsKey)                
                     entityXml.SetElementValue(property.Name,property.GetValue(entity).ToString());
             }
+            document.Save(XmlPath);
             return true;
         }
 
@@ -215,10 +238,36 @@ namespace Tools
                     T tt = new T();
                     foreach (var Proper in tt.GetType().GetProperties())
                     {
-                        var vlu= elemnt.Element(Proper.Name).Value;
+                        if (elemnt.Element(Proper.Name)==null)
+                        {
+                            AddXmlElement();
+                        }
+                        var vlu= elemnt.Element(Proper.Name).Value;                        
                         if (vlu!=null)
                         {
-                            Proper.SetValue(tt, Convert.ChangeType(vlu, Proper.PropertyType) );
+                            if (Proper.PropertyType.IsEnum)
+                            {
+                                Proper.SetValue(tt, Enum.Parse(Proper.PropertyType, vlu.ToString()));
+                            } else if (Proper.PropertyType == typeof(Boolean))
+                            {
+                                bool vluStr;
+                                //if (vlu=="")
+                                //{
+                                //    vluStr = vlu == "" ? false : true;
+                                //}
+                                //else
+                                //{
+                                //    vluStr = vlu== "True" ? true : false;
+                                //}
+                                bool.TryParse(vlu, out vluStr);
+                                Proper.SetValue(tt, Convert.ToBoolean(vluStr));
+                            } else if(Proper.PropertyType == typeof(int))
+                            {
+                                int vluStr = 0;
+                                int.TryParse(vlu, out vluStr);
+                                Proper.SetValue(tt, vluStr);
+                            }else
+                                Proper.SetValue(tt, Convert.ChangeType(vlu, Proper.PropertyType));
                         }
                     }
                     result.Add(tt);

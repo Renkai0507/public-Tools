@@ -20,14 +20,14 @@ namespace DBService.DB
         {
             db = new SqlConnection(conn);
         }
-        protected List<T> ExecSQL(string SQLstr)
+        protected List<T> QuerySQL(string SQLstr)
         {
             if (db.State == ConnectionState.Closed) db.Open();            
             var dbresult = db.Query<T>(SQLstr, commandType: CommandType.Text);
             db.Close();
             return dbresult.ToList();
         }
-        protected List<T> ConectSQL(string SQLstr, string[] Codes)
+        protected List<T> QuerySQL(string SQLstr, string[] Codes)
         {
             if (db.State == ConnectionState.Closed) db.Open();
             var dbresult = db.Query<T>(SQLstr, new { Codes }, commandType: CommandType.Text);
@@ -54,21 +54,21 @@ namespace DBService.DB
             db.Close();
             return dbresult.ToList();
         }
-        protected List<T> ConectSQL(string SQLstr, DynamicParameters Dp)
+        protected List<T> QuerySQL(string SQLstr, DynamicParameters Dp)
         {
             if (db.State == ConnectionState.Closed) db.Open();
             var dbresult = db.Query<T>(SQLstr, Dp, commandType: CommandType.Text);
             db.Close();
             return dbresult.ToList();
         }
-        protected List<T> ConectSQL(string SQLstr, List<T> entity)
+        protected List<T> QuerySQL(string SQLstr, List<T> entity)
         {
             if (db.State == ConnectionState.Closed) db.Open();
             var dbresult = db.Query<T>(SQLstr, entity, commandType: CommandType.Text);
             db.Close();
             return dbresult.ToList();
         }
-         protected int ExecSQL(string SQLstr, T entity)
+        protected int ExecSQL(string SQLstr, T entity)
         {
             IDbConnection db = new SqlConnection(conn);
             if (db.State == ConnectionState.Closed) db.Open();
@@ -76,6 +76,23 @@ namespace DBService.DB
             db.Close();
             return result;
         }
+         protected int ExecSQL(string SQLstr, DynamicParameters Entity)
+        {
+            IDbConnection db = new SqlConnection(conn);
+            if (db.State == ConnectionState.Closed) db.Open();
+            var result = db.Execute(SQLstr, Entity, commandTimeout: 180, commandType: CommandType.Text);
+            db.Close();
+            return result;
+        }
+        protected int ExecSQL(string SQLstr)
+        {
+            IDbConnection db = new SqlConnection(conn);
+            if (db.State == ConnectionState.Closed) db.Open();
+            var result = db.Execute(SQLstr, commandTimeout: 180, commandType: CommandType.Text);
+            db.Close();
+            return result;
+        }
+       
          protected List<string> GetStrs(string SQLstr)
         {
             IDbConnection db = new SqlConnection(conn);
